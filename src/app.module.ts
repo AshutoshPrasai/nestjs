@@ -10,6 +10,8 @@ import { UserModule } from './user/user.module';
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
+      playground: true, // Enables GraphQL Playground
+      introspection: true, // Allows schema introspection in development mode
     }),
     UserModule,
   ],
