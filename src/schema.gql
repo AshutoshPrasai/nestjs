@@ -22,4 +22,10 @@ type Query {
 
 type Mutation {
   createUser(name: String!, email: String!): User!
+  updateUser(id: Int!, data: UpdateUserInput!): User!
+}
+
+input UpdateUserInput {
+  name: String
+  email: String
 }

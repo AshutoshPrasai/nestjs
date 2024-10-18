@@ -1,14 +1,21 @@
-import { Args, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, Info, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { PrismaSelect } from '@paljs/plugins';
+import { GraphQLResolveInfo } from 'graphql';
 import { PrismaService } from '../prisma/prisma.service';
-import { User } from './user.model';
+import { UpdateUserInput, User } from './user.model';
 
 @Resolver(() => User)
 export class UserResolver {
   constructor(private prisma: PrismaService) {}
 
   @Query(() => [User])
-  async users(): Promise<User[]> {
-    return this.prisma.user.findMany();
+  async users(@Info() info: GraphQLResolveInfo): Promise<User[]> {
+    // Use PrismaSelect from @paljs/plugins to select fields dynamically
+    const select = new PrismaSelect(info).value;
+
+    return this.prisma.user.findMany({
+      ...select, // Pass the select object from PrismaSelect to findMany
+    });
   }
 
   @Query(() => User, { nullable: true })
@@ -28,6 +35,28 @@ export class UserResolver {
         name,
         email,
       },
+    });
+  }
+
+  @Mutation(() => User)
+  async updateUser(
+    @Args('id', { type: () => Int }) id: number,
+    @Args('data') updateUserInput: UpdateUserInput,
+    @Info() info: GraphQLResolveInfo,
+  ): Promise<User> {
+    const { name, email } = updateUserInput;
+
+    // PrismaSelect to fetch only the requested fields in the response
+    const select = new PrismaSelect(info).value;
+
+    // Prisma update query to update only provided fields
+    return this.prisma.user.update({
+      where: { id },
+      data: {
+        ...(name && { name }), // Conditionally include the `name` if provided
+        ...(email && { email }), // Conditionally include the `email` if provided
+      },
+      ...select, // Pass the select object from PrismaSelect to get only requested fields
     });
   }
 }
